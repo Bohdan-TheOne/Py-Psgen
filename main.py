@@ -4,7 +4,7 @@ from shutil import copyfile
 from photoshop import Session
 from os import mkdir
 from tkinter.messagebox import showerror
-from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import askopenfilename, askdirectory
 from pathlib import Path
 
 
@@ -16,6 +16,7 @@ class FileGeneratorApp(tk.Tk):
     txt = {
         'name': 'Photoshop File Generator',
         'file': 'Template : ',
+        'targ': 'Save to (optional) : ',
         'chap': 'Genereate chapters in range : '
     }
 
@@ -26,7 +27,8 @@ class FileGeneratorApp(tk.Tk):
         self.grid_rowconfigure(0, weight=15)
         self.grid_rowconfigure(1, weight=10)
         self.grid_rowconfigure(2, weight=10)
-        self.grid_rowconfigure(3, weight=500)
+        self.grid_rowconfigure(3, weight=10)
+        self.grid_rowconfigure(4, weight=500)
         self.grid_columnconfigure(0, weight=20)
         self.grid_columnconfigure(1, weight=20)
         self.grid_columnconfigure(2, weight=20)
@@ -38,6 +40,7 @@ class FileGeneratorApp(tk.Tk):
 
         self.istset = False
         self.ischset = False
+        self.target_ref = ''
 
     def create_components(self):
         self.griding = Void()
@@ -46,11 +49,18 @@ class FileGeneratorApp(tk.Tk):
 
         self.l_name = tk.Label(self, text=self.txt['name'],
                                font=("Arial", 22, "bold"))
+
         self.l_tname = tk.Label(self, text=self.txt['file'],
                                 font=("Arial", 14))
         self.e_template = tk.Entry(self, width=50)
         self.b_choose_temlate = tk.Button(self, text='Choose', command=self.set_template,
                                           font=("Arial", 10), width=13)
+
+        self.l_targname = tk.Label(self, text=self.txt['targ'],
+                                   font=("Arial", 14))
+        self.e_targpath = tk.Entry(self, width=50)
+        self.b_choose_target = tk.Button(self, text='Choose', command=self.set_target,
+                                         font=("Arial", 10), width=13)
 
         self.l_chapters = tk.Label(self, text=self.txt['chap'],
                                    font=("Arial", 14))
@@ -68,15 +78,19 @@ class FileGeneratorApp(tk.Tk):
         self.l_name          .grid(row=0, column=0, columnspan=5)
         self.l_tname         .grid(row=1, column=0, sticky=tk.W)
         self.e_template      .grid(row=1, column=1, columnspan=3)
-        self.b_choose_temlate.grid(row=1, column=4, sticky=tk.E)
+        self.b_choose_temlate.grid(row=1, column=4, sticky=tk.E, padx=5)
 
-        self.l_chapters.grid(row=2, column=0, columnspan=2, sticky=tk.W)
-        self.e_ch_start.grid(row=2, column=2)
-        self.e_ch_end  .grid(row=2, column=3, sticky=tk.E)
-        self.b_set_chapters.grid(row=2, column=4, sticky=tk.E)
+        self.l_targname      .grid(row=2, column=0, sticky=tk.W)
+        self.e_targpath      .grid(row=2, column=1, columnspan=3)
+        self.b_choose_target .grid(row=2, column=4, sticky=tk.E, padx=5)
 
-        self.f_gen.grid(row=3, column=0, columnspan=5)
-        self.b_generate.grid(row=4, column=4)
+        self.l_chapters.grid(row=3, column=0, columnspan=2, sticky=tk.W)
+        self.e_ch_start.grid(row=3, column=2)
+        self.e_ch_end  .grid(row=3, column=3, sticky=tk.E)
+        self.b_set_chapters.grid(row=3, column=4, sticky=tk.E, padx=5)
+
+        self.f_gen.grid(row=4, column=0, columnspan=5)
+        self.b_generate.grid(row=5, column=4, padx=5, pady=5)
 
     def set_template(self):
         filename = Path(askopenfilename())
@@ -91,6 +105,17 @@ class FileGeneratorApp(tk.Tk):
         self.istset = True
         if self.ischset:
             self.b_generate['state'] = tk.NORMAL
+
+    def set_target(self):
+        filename = Path(askdirectory())
+        try:
+            self.target_ref = filename.relative_to(Path.cwd())
+        except ValueError:
+            self.target_ref = filename
+
+        self.target_ref = str(self.target_ref) + '\\'
+        self.e_targpath.delete(0, tk.END)
+        self.e_targpath.insert(0, self.target_ref)
 
     def add_rows(self):
         try:
@@ -131,7 +156,7 @@ class FileGeneratorApp(tk.Tk):
 
         for k, (ch, pgnum) in enumerate(chapters):
             try:
-                mkdir(f'{ch:03}')
+                mkdir(f'{self.target_ref}{ch:03}')
             except FileExistsError:
                 pass
 
@@ -139,7 +164,7 @@ class FileGeneratorApp(tk.Tk):
                 progress = 100 // pgnum
 
                 expg = pg + 4 if pg + 4 <= pgnum else pgnum
-                new_file_name = f'{ch:03}/Aot-{ch:03}-st({pg:02}-{expg:02}).psd'
+                new_file_name = f'{self.target_ref}{ch:03}\\Aot-{ch:03}-st({pg:02}-{expg:02}).psd'
                 copyfile(self.template_ref, new_file_name)
                 new_file_name = str(Path(new_file_name).resolve())
 
