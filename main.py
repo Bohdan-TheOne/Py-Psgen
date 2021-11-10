@@ -152,11 +152,12 @@ class FileGeneratorApp(tk.Tk):
                                               ps.PhotoshopSaveOptions(), True)
                     ps.active_document.close()
 
-                self.chapters[k].progress['value'] = 100
                 self.update_idletasks()
+            self.chapters[k].progress['value'] = 100
+            self.update_idletasks()
 
-    # def report_callback_exception(self, exc, val, tb):
-    #     showerror("Error", message=str(val))
+    def report_callback_exception(self, exc, val, tb):
+        showerror("Error", message=str(val))
 
 
 if __name__ == '__main__':
