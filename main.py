@@ -17,7 +17,8 @@ class FileGeneratorApp(tk.Tk):
         'name': 'Photoshop File Generator',
         'file': 'Template : ',
         'targ': 'Save to (optional) : ',
-        'chap': 'Genereate chapters in range : '
+        'chap': 'Genereate chapters in range : ',
+        'splt': 'Split by pages : '
     }
 
     def __init__(self):
@@ -71,6 +72,10 @@ class FileGeneratorApp(tk.Tk):
 
         self.f_gen = tk.Frame(self, pady=10)
 
+        self.l_split = tk.Label(self, text=self.txt['splt'],
+                                font=("Arial", 14))
+        self.e_split = tk.Entry(self, font=("Arial", 10), width=15)
+        self.e_split.insert(0, '10')
         self.b_generate = tk.Button(self, text='Generate', command=self.start_generation,
                                     font=("Arial", 10), width=13, state=tk.DISABLED)
 
@@ -90,6 +95,9 @@ class FileGeneratorApp(tk.Tk):
         self.b_set_chapters.grid(row=3, column=4, sticky=tk.E, padx=5)
 
         self.f_gen.grid(row=4, column=0, columnspan=5)
+
+        self.l_split   .grid(row=5, column=0, padx=5, sticky=tk.W)
+        self.e_split   .grid(row=5, column=1, padx=5)
         self.b_generate.grid(row=5, column=4, padx=5, pady=5)
 
     def set_template(self):
@@ -151,6 +159,7 @@ class FileGeneratorApp(tk.Tk):
     def start_generation(self):
         try:
             chapters = [(ch.id, int(ch.entry.get())) for ch in self.chapters]
+            splitter = int(self.e_split.get())
         except ValueError:
             raise ValueError("Not all page numbers are filled coorectly")
 
@@ -160,22 +169,28 @@ class FileGeneratorApp(tk.Tk):
             except FileExistsError:
                 pass
 
-            for pg in range(1, pgnum, 5):
+            for pg in range(1, pgnum, splitter):
                 progress = 100 // pgnum
 
-                expg = pg + 4 if pg + 4 <= pgnum else pgnum
+                expg = pg + splitter - 1
+                expg = expg if expg <= pgnum else pgnum
                 new_file_name = f'{self.target_ref}{ch:03}\\Aot-{ch:03}-st({pg:02}-{expg:02}).psd'
                 copyfile(self.template_ref, new_file_name)
                 new_file_name = str(Path(new_file_name).resolve())
 
                 with Session(new_file_name, action="open") as ps:
+                    doc = ps.active_document
+                    for i in range(pg, expg):
+                        doc.layers[0].duplicate()
                     for i, num in enumerate(range(pg, expg+1)):
-                        ps.active_document.layers[i].name = f'{num:02}'
+                        doc.layers[i].name = f'{num:02}'
+                        for obj in doc.layers[i].layers:
+                            obj.name = obj.name.split(' copy')[0]
                         self.chapters[k].progress['value'] += progress
                         self.update_idletasks()
-                    ps.active_document.saveAs(new_file_name,
-                                              ps.PhotoshopSaveOptions(), True)
-                    ps.active_document.close()
+
+                    doc.saveAs(new_file_name, ps.PhotoshopSaveOptions(), True)
+                    doc.close()
 
                 self.update_idletasks()
             self.chapters[k].progress['value'] = 100
