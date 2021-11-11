@@ -2,9 +2,19 @@
 ## Generate multiple photoshop files
 
 ### How to use:
-* Choose referenced file (*.psd which has 5 objects [folders, images, layers])
+* Choose referenced file (*.psd). This will set main options for resulting file (size, colormode, inner structure).
+* (Optional) Set save location. If not set, besides executable
 * Enter generated chapters numbers and click `Preset`
 * Enter number of pages for each target chapter
+* Set split degree (number of pages per file)
 * Click `Generate` button
 
-Result will be saved in same directory as executable
+File example:
+
+```
+File
+└───main group (will be duplicated)
+    ├───text
+    │   └───referenced text layer
+    └───clean
+```
